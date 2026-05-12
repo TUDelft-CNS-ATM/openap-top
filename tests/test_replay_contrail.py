@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 
 import numpy as np
@@ -52,5 +54,5 @@ def test_build_contrail_interpolant_finite_at_sample_point():
     meteo = _fake_meteo_df()
     interp = replay.build_contrail_interpolant(meteo, sigma=2)
     # Sample inside bbox: lon=7, lat=47, h=10000m, ts=3600s
-    value = float(interp([7.0, 47.0, 10_000, 3600]))
+    value = float(cast(Any, interp([7.0, 47.0, 10_000, 3600])).full().item())
     assert np.isfinite(value)

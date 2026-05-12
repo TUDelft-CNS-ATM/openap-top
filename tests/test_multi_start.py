@@ -49,8 +49,8 @@ class TestPerturbGuessAltitude:
         df = _make_canonical_df()
         perturbed = _perturb_guess(df, lateral_km=0.0, altitude_ft=1500.0, proj=proj)
         np.testing.assert_allclose(
-            perturbed["altitude"].values,
-            df["altitude"].values + 1500.0,  # type: ignore[operator]  # pandas .values type is opaque to numpy stubs
+            perturbed["altitude"].to_numpy(dtype=float),
+            df["altitude"].to_numpy(dtype=float) + 1500.0,
         )
 
     def test_altitude_zero_leaves_altitude_unchanged(self, proj):
@@ -64,8 +64,8 @@ class TestPerturbGuessAltitude:
         df = _make_canonical_df()
         perturbed = _perturb_guess(df, lateral_km=0.0, altitude_ft=-2000.0, proj=proj)
         np.testing.assert_allclose(
-            perturbed["altitude"].values,
-            df["altitude"].values - 2000.0,  # type: ignore[operator]  # pandas .values type is opaque to numpy stubs
+            perturbed["altitude"].to_numpy(dtype=float),
+            df["altitude"].to_numpy(dtype=float) - 2000.0,
         )
 
     def test_perturb_does_not_mutate_input(self, proj):
@@ -99,13 +99,13 @@ class TestPerturbGuessLateral:
         df = _make_canonical_df()
         perturbed = _perturb_guess(df, lateral_km=0.0, altitude_ft=0.0, proj=proj)
         np.testing.assert_allclose(
-            perturbed["latitude"].values,
-            df["latitude"].values,  # type: ignore[arg-type]  # pandas .values type is opaque to numpy stubs
+            perturbed["latitude"].to_numpy(dtype=float),
+            df["latitude"].to_numpy(dtype=float),
             atol=1e-9,
         )
         np.testing.assert_allclose(
-            perturbed["longitude"].values,
-            df["longitude"].values,  # type: ignore[arg-type]  # pandas .values type is opaque to numpy stubs
+            perturbed["longitude"].to_numpy(dtype=float),
+            df["longitude"].to_numpy(dtype=float),
             atol=1e-9,
         )
 

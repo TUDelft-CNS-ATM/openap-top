@@ -9,10 +9,12 @@ pre-built interpolant directly; unit tests cover that function with mocks.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 import pytest
 
 import opentop as top
+import pandas as pd
 from opentop import replay, tools
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -65,11 +67,14 @@ def test_replay_end_to_end_cruise(flight_df, interpolant):
         fuel = opt.obj_fuel(x, u, dt)
         return grid + 0.1 * fuel
 
-    df = opt.trajectory(
-        objective=blended,
-        interpolant=interpolant,
-        n_dim=4,
-        time_dependent=True,
+    df = cast(
+        pd.DataFrame,
+        opt.trajectory(
+            objective=blended,
+            interpolant=interpolant,
+            n_dim=4,
+            time_dependent=True,
+        ),
     )
 
     assert df is not None, "optimizer returned None"

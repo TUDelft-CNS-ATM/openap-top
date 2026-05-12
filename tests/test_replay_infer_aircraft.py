@@ -38,7 +38,7 @@ def test_infer_aircraft_returns_none_on_lookup_failure():
 
 def test_infer_aircraft_returns_none_on_empty_icao24_column():
     """Empty or missing icao24 column → no lookup, return None."""
-    result_empty_col = replay.infer_aircraft(pd.DataFrame(columns=["icao24"]))
+    result_empty_col = replay.infer_aircraft(pd.DataFrame(columns=pd.Index(["icao24"])))
     assert result_empty_col is None
 
     result_missing_col = replay.infer_aircraft(pd.DataFrame({"foo": [1]}))

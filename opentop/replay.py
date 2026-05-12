@@ -8,7 +8,7 @@ Functions in this module are pure-ish and reusable — the CLI wrapper in
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal, Union, cast
 
 import pandas as pd
 
@@ -62,7 +62,7 @@ def _fetch_from_opensky(
             f"in window {start} - {stop}."
         )
 
-    df = flight.data
+    df = cast(pd.DataFrame, flight.data).copy()
 
     # If multiple ICAO24s came back, pick the most-frequent one.
     counts = df["icao24"].value_counts()
@@ -71,7 +71,7 @@ def _fetch_from_opensky(
 
     # Drop traffic-specific columns that are optional downstream.
     df = df.drop(columns=["last_position", "onground"], errors="ignore")
-    df = df[df["latitude"].notnull()].reset_index(drop=True)
+    df = cast(pd.DataFrame, df.loc[pd.notna(df["latitude"])]).reset_index(drop=True)
 
     if df.empty:
         raise ValueError("Flight has no valid trajectory points after filtering.")
@@ -131,12 +131,12 @@ def infer_aircraft(flight_df: pd.DataFrame) -> str | None:
     except Exception:
         return None
 
-    if matches is None or (hasattr(matches, "empty") and matches.empty):
+    if not isinstance(matches, pd.DataFrame) or matches.empty:
         return None
     if "typecode" not in matches.columns:
         return None
 
-    typecode = matches["typecode"].iloc[0]
+    typecode = cast(pd.Series, matches["typecode"]).iloc[0]
     if pd.isna(typecode):
         return None
     return str(typecode).strip() or None
@@ -205,7 +205,8 @@ def build_meteo_and_wind(
     )
     meteo = era5.interpolate(grid)
 
-    wind = (
+    wind = cast(
+        pd.DataFrame,
         meteo.rename(
             columns={
                 "u_component_of_wind": "u",
@@ -216,7 +217,7 @@ def build_meteo_and_wind(
             ts=lambda x: (x["timestamp"] - x["timestamp"].iloc[0]).dt.total_seconds(),
             h=lambda x: x["altitude"] * ft,
         )[["ts", "latitude", "longitude", "h", "u", "v"]]
-        .reset_index(drop=True)
+        .reset_index(drop=True),
     )
 
     return meteo, wind
