@@ -20,10 +20,6 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
-[options]
-exclude-newer = "2026-04-14T08:55:11.794080033Z"
-exclude-newer-span = "P7D"
-
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
@@ -1114,7 +1110,7 @@ wheels = [
 
 [[package]]
 name = "fastmeteo"
-version = "1.1.1"
+version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cfgrib" },
@@ -1135,9 +1131,9 @@ dependencies = [
     { name = "xarray" },
     { name = "zarr" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0b/ad/88753efd9b1c728fd3526081a0991057c20c3b089564f66cc5bc93d0d1a0/fastmeteo-1.1.1.tar.gz", hash = "sha256:668e72ac5965c2bb4b0900ebe53fb230e0f90be4c76a3fc5601e77ef1789fd80", size = 26490680, upload-time = "2026-03-18T16:15:25.769Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/96/ba/200f91528f61a9ed93087ba4629477b1e73aabf3187918fac373f38a8859/fastmeteo-1.2.0.tar.gz", hash = "sha256:d02bebcbe324aff53ae00b3d6ee789221412aad158c3496f8dd4bba96cac3589", size = 26497310, upload-time = "2026-06-05T09:39:57.875Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/d8/bca70db696d21168804cf35cad5899cfe76e0128292e87d51101f1c84160/fastmeteo-1.1.1-py3-none-any.whl", hash = "sha256:1aba0941b84fb6fbf5a4c7ed6055e9b7ce1fee4494bb157268cfddc54a39c7e8", size = 22009, upload-time = "2026-03-18T16:15:23.289Z" },
+    { url = "https://files.pythonhosted.org/packages/09/45/9087d539ad208b71da15f2d9bb65df8318d196fb14c65fefb374c7ed93e1/fastmeteo-1.2.0-py3-none-any.whl", hash = "sha256:c7c5cb0a0dc97e0a6ac210a60867def008aec672585f18518f2782b7d8cc4b33", size = 22035, upload-time = "2026-06-05T09:39:56.62Z" },
 ]
 
 [[package]]
@@ -2906,7 +2902,7 @@ requires-dist = [
     { name = "cartopy", specifier = ">=0.25" },
     { name = "casadi", specifier = ">=3.7" },
     { name = "click", specifier = ">=8.3" },
-    { name = "fastmeteo", marker = "extra == 'replay'", specifier = ">=0.3" },
+    { name = "fastmeteo", marker = "extra == 'replay'", specifier = ">=1.2.0" },
     { name = "openap", specifier = ">=2.5" },
     { name = "pandas", marker = "extra == 'replay'", specifier = "<3" },
     { name = "pyarrow", specifier = ">=23.0" },

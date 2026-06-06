@@ -62,3 +62,19 @@ def test_build_meteo_and_wind_returns_two_dataframes():
         assert col in wind.columns, f"wind missing column {col}"
     assert (wind["h"] > 0).all(), "h should be metres"
     assert (wind["ts"] >= 0).all(), "ts should start at zero"
+
+
+def test_build_meteo_and_wind_rejects_uninterpolated_era5_grid():
+    pytest.importorskip("fastmeteo")
+    fake_era5 = MagicMock()
+    grid_without_era5_fields = _fake_flight_df().assign(
+        longitude_360=lambda d: d.longitude % 360
+    )
+    fake_era5.interpolate.return_value = grid_without_era5_fields
+
+    with patch("fastmeteo.source.ArcoEra5", return_value=fake_era5):
+        with pytest.raises(ValueError, match="ERA5 interpolation did not return"):
+            replay.build_meteo_and_wind(
+                _fake_flight_df(),
+                era5_store="/tmp/opentop-era5-test",
+            )

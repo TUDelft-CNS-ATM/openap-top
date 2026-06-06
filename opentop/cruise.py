@@ -29,6 +29,9 @@ class Cruise(Base):
         engine: str | None = None,
         use_synonym: bool = False,
         dT: float = 0.0,
+        *,
+        h_min: float | None = None,
+        h_max: float | None = None,
     ) -> None:
         super().__init__(
             actype,
@@ -44,6 +47,8 @@ class Cruise(Base):
         self.fix_alt = False
         self.fix_track = False
         self.allow_descent = False
+        self.h_min = h_min
+        self.h_max = h_max
 
     def fix_mach_number(self):
         """Constrain Mach number to be constant during cruise."""
@@ -72,8 +77,15 @@ class Cruise(Base):
         ts_min = 0
         ts_max = max(5, self.range / 1000 / 500) * 3600
 
-        h_max = kwargs.get("h_max", self.aircraft["limits"]["ceiling"])
-        h_min = kwargs.get("h_min", 15_000 * ft)
+        h_max = kwargs.get(
+            "h_max",
+            self.h_max
+            if self.h_max is not None
+            else self.aircraft["limits"]["ceiling"],
+        )
+        h_min = kwargs.get(
+            "h_min", self.h_min if self.h_min is not None else 15_000 * ft
+        )
 
         psi = self._compute_bearing_psi()
 
@@ -119,8 +131,10 @@ class Cruise(Base):
         max_fuel: float | None = None,
         return_failed: bool = False,
         initial_guess: pd.DataFrame | None = None,
+        h_min: float | None = None,
+        h_max: float | None = None,
         interpolant: Any = None,
-        n_dim: int = 3,
+        n_dim: int | None = None,
         time_dependent: bool = False,
         auto_rescale_objective: bool = False,
         exact_hessian: bool = False,
@@ -133,8 +147,13 @@ class Cruise(Base):
             max_fuel: Maximum fuel constraint (kg).
             return_failed: Return result even if optimization fails.
             initial_guess: DataFrame to use as initial guess.
+            h_min: Minimum cruise altitude bound in meters. Defaults to the
+                constructor value, or 15,000 ft if unset.
+            h_max: Maximum cruise altitude bound in meters. Defaults to the
+                constructor value, or the aircraft ceiling if unset.
             interpolant: CasADi grid-cost interpolant (optional).
-            n_dim: Interpolant input dimension (3 or 4). Default 3.
+            n_dim: Interpolant input dimension (3 or 4). Auto-detected
+                from the interpolant by default.
             time_dependent: Grid cost is time-dependent. Default False.
             auto_rescale_objective: Rescale objective to O(1). Default False.
             exact_hessian: Force IPOPT exact Hessian. Default False.
@@ -152,7 +171,12 @@ class Cruise(Base):
             "auto_rescale_objective": auto_rescale_objective,
             "exact_hessian": exact_hessian,
         }
-        self.init_conditions(**_kwargs)
+        init_kwargs = dict(_kwargs)
+        if h_min is not None:
+            init_kwargs["h_min"] = h_min
+        if h_max is not None:
+            init_kwargs["h_max"] = h_max
+        self.init_conditions(**init_kwargs)
 
         customized_max_fuel = max_fuel
 

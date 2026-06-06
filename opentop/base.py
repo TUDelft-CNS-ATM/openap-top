@@ -660,7 +660,8 @@ class Base:
             **kwargs:
                 interpolant: CasADi interpolant function.
                 symbolic: Use symbolic computation. Default True.
-                n_dim: Input dimension, 3 (lon,lat,h) or 4 (+ts). Default 3.
+                n_dim: Input dimension, 3 (lon,lat,h) or 4 (+ts).
+                    Auto-detected from the interpolant by default.
                 time_dependent: Multiply cost by dt. Default True.
         """
         return _objectives.obj_grid_cost(x, u, dt, proj=self.proj, **kwargs)

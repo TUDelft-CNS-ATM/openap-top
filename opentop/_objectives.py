@@ -154,6 +154,15 @@ def obj_climate(
 # ---- Grid cost ----
 
 
+def _infer_grid_n_dim(interpolant: Any | None, n_dim: int | None = None) -> int:
+    """Return the grid-cost input dimension, validating supported values."""
+    if n_dim is None:
+        n_dim = int(interpolant.numel_in(0)) if interpolant is not None else 3
+    if n_dim not in (3, 4):
+        raise ValueError(f"n_dim must be 3 or 4, got {n_dim}")
+    return n_dim
+
+
 def _obj_grid_cost_impl(
     x: Symbolic,
     u: Symbolic,
@@ -167,20 +176,18 @@ def _obj_grid_cost_impl(
     Kwargs:
         interpolant: CasADi interpolant function (required).
         symbolic: Use symbolic computation. Default True.
-        n_dim: Input dimension, 3 (lon,lat,h) or 4 (+ts). Default 3.
+        n_dim: Input dimension, 3 (lon,lat,h) or 4 (+ts). Auto-detected
+            from the interpolant by default.
         time_dependent: Multiply cost by dt. Default True.
     """
     xp, yp, h, _, ts = x[0], x[1], x[2], x[3], x[4]  # type: ignore[index]  # Symbolic includes float but x is always array-like
 
     interpolant: Callable[..., Any] | None = kwargs.get("interpolant", None)  # type: ignore[assignment]
     symbolic = kwargs.get("symbolic", True)
-    n_dim = kwargs.get("n_dim", 3)
     time_dependent = kwargs.get("time_dependent", True)
-    if n_dim not in (3, 4):
-        raise ValueError(f"n_dim must be 3 or 4, got {n_dim}")
-
     if interpolant is None:
         raise ValueError("obj_grid_cost requires an 'interpolant' keyword argument")
+    n_dim = _infer_grid_n_dim(interpolant, kwargs.get("n_dim"))
 
     lon, lat = proj(xp, yp, inverse=True, symbolic=symbolic)
 

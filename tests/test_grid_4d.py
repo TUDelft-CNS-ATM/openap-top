@@ -1,8 +1,7 @@
 """Integration: time-dependent (4D) grid cost on a short cruise.
 
-Pins the obj_grid_cost(n_dim=4, time_dependent=True) path before Phase 3
-restructures it. Uses a cached bspline interpolant under tests/fixtures/
-so this test re-runs in ~1s plus solver time.
+Uses a cached bspline interpolant under tests/fixtures/ so this test re-runs
+in ~1s plus solver time.
 """
 
 from pathlib import Path
@@ -36,7 +35,6 @@ def test_cruise_with_4d_grid_cost_converges(interp_4d):
             u,
             dt,
             interpolant=kwargs["interpolant"],
-            n_dim=4,
             time_dependent=True,
         )
         return grid + opt.obj_fuel(x, u, dt)
@@ -44,7 +42,6 @@ def test_cruise_with_4d_grid_cost_converges(interp_4d):
     df = opt.trajectory(
         objective=blended,
         interpolant=interp_4d,
-        n_dim=4,
         time_dependent=True,
     )
     assert df is not None, "trajectory returned None"

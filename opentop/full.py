@@ -97,7 +97,7 @@ class CompleteFlight(Base):
         initial_guess: pd.DataFrame | None = None,
         remove_cruise: bool = False,
         interpolant: Any = None,
-        n_dim: int = 3,
+        n_dim: int | None = None,
         time_dependent: bool = False,
         auto_rescale_objective: bool = False,
         exact_hessian: bool = False,
@@ -112,7 +112,8 @@ class CompleteFlight(Base):
             initial_guess: DataFrame to use as initial guess.
             remove_cruise: Unused for complete flight (accepted for API symmetry).
             interpolant: CasADi grid-cost interpolant (optional).
-            n_dim: Interpolant input dimension (3 or 4). Default 3.
+            n_dim: Interpolant input dimension (3 or 4). Auto-detected
+                from the interpolant by default.
             time_dependent: Grid cost is time-dependent. Default False.
             auto_rescale_objective: Rescale objective to O(1). Default False.
             exact_hessian: Force IPOPT exact Hessian. Default False.

@@ -204,6 +204,7 @@ def build_meteo_and_wind(
         }
     )
     meteo = era5.interpolate(grid)
+    _validate_era5_meteo(meteo, era5_store)
 
     wind = cast(
         pd.DataFrame,
@@ -221,6 +222,34 @@ def build_meteo_and_wind(
     )
 
     return meteo, wind
+
+
+def _validate_era5_meteo(meteo: pd.DataFrame, era5_store: Union[str, Path]) -> None:
+    """Validate that fastmeteo joined the ERA5 fields needed by replay."""
+    required = {
+        "temperature",
+        "specific_humidity",
+        "u_component_of_wind",
+        "v_component_of_wind",
+    }
+    missing = sorted(required - set(meteo.columns))
+    if not missing:
+        return
+
+    available = sorted(str(col) for col in meteo.columns)
+    hint = ""
+    if "longitude_360" in meteo.columns:
+        hint = (
+            " The presence of 'longitude_360' means fastmeteo returned the "
+            "input interpolation grid unchanged, usually because the local "
+            f"ERA5 store at {era5_store!s} has no data for the requested "
+            "time window or a first-run cache sync did not finish. Remove "
+            "that local store or use a fresh --era5-store path, then rerun."
+        )
+    raise ValueError(
+        "ERA5 interpolation did not return the required columns "
+        f"{missing}. Available columns: {available}.{hint}"
+    )
 
 
 def normalize_flight_for_vis(flight_df: pd.DataFrame) -> pd.DataFrame:

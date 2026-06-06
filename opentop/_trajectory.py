@@ -60,10 +60,7 @@ def to_dataframe(
         duration ``dt = ts_final / nodes``. The caller assigns these back onto
         the Base instance to preserve historical side-effect semantics.
     """
-    if n_dim is None:
-        n_dim = interpolant.size1_in(0) if interpolant is not None else 3
-    if n_dim not in (3, 4):
-        raise ValueError(f"n_dim must be 3 or 4, got {n_dim}")
+    n_dim = _objectives._infer_grid_n_dim(interpolant, n_dim)
 
     X = x_opt if isinstance(x_opt, np.ndarray) else x_opt.full()
     U = u_opt if isinstance(u_opt, np.ndarray) else u_opt.full()

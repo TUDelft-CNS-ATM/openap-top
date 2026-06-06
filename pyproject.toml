@@ -31,7 +31,7 @@ dependencies = [
 [project.optional-dependencies]
 replay = [
     "traffic>=2",
-    "fastmeteo>=0.3",
+    "fastmeteo>=1.2.0",
     "scipy>=1",
     "pandas<3",
 ]

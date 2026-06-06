@@ -1,6 +1,7 @@
 """Tests for the Cruise trajectory optimizer."""
 
 import pytest
+from openap.aero import ft
 
 import opentop as top
 
@@ -73,6 +74,26 @@ class TestCruise:
         assert df is not None
         assert len(df) > 0
         assert df.mass.iloc[-1] < df.mass.iloc[0]
+
+
+def test_cruise_accepts_constructor_altitude_bounds(aircraft_type, short_flight):
+    h_min = 25_000 * ft
+    h_max = 32_000 * ft
+
+    opt = top.Cruise(
+        aircraft_type,
+        short_flight["origin"],
+        short_flight["destination"],
+        short_flight["m0"],
+        h_min=h_min,
+        h_max=h_max,
+    )
+    opt.init_conditions()
+
+    assert opt.x_0_lb[2] == h_min
+    assert opt.x_0_ub[2] == h_max
+    assert opt.x_lb[2] == h_min
+    assert opt.x_ub[2] == h_max
 
 
 def test_cruise_initial_guess_is_honored_with_no_double_init(
