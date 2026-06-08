@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -11,26 +11,28 @@ from opentop import replay
 
 
 def test_infer_aircraft_returns_type_from_icao24():
-    pytest.importorskip("traffic")
+    traffic_data = pytest.importorskip("traffic.data")
     flight_df = pd.DataFrame({"icao24": ["4bb9b1"]})
 
     fake_lookup = MagicMock()
     fake_lookup.get.return_value = pd.DataFrame({"typecode": ["B738"]})
 
-    with patch("traffic.data.aircraft", fake_lookup):
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setitem(traffic_data.__dict__, "aircraft", fake_lookup)
         result = replay.infer_aircraft(flight_df)
 
     assert result == "B738"
 
 
 def test_infer_aircraft_returns_none_on_lookup_failure():
-    pytest.importorskip("traffic")
+    traffic_data = pytest.importorskip("traffic.data")
     flight_df = pd.DataFrame({"icao24": ["ffffff"]})
 
     fake_lookup = MagicMock()
     fake_lookup.get.return_value = pd.DataFrame()
 
-    with patch("traffic.data.aircraft", fake_lookup):
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setitem(traffic_data.__dict__, "aircraft", fake_lookup)
         result = replay.infer_aircraft(flight_df)
 
     assert result is None
