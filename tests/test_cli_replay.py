@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -15,30 +16,39 @@ FLIGHT = FIXTURES / "flight_ryr880w_2023-01-05.parquet"
 INTERP = FIXTURES / "contrail_4d.casadi"
 
 
+class _FakePlot:
+    def savefig(self, path: Path, *args: Any, **kwargs: Any) -> None:
+        path.write_bytes(b"fake plot")
+
+    def close(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+
 @pytest.mark.skipif(not FLIGHT.exists(), reason="missing flight fixture")
 def test_replay_from_file_fuel(tmp_path):
     """`opentop replay --from-file <parquet> -o DIR` runs and writes outputs."""
     out_dir = tmp_path / "replay_out"
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli_main,
-        [
-            "replay",
-            "RYR880W",
-            "--from-file",
-            str(FLIGHT),
-            "-a",
-            "B738",
-            "--obj",
-            "fuel",
-            "--no-wind",
-            "--max-iter",
-            "300",
-            "-o",
-            str(out_dir),
-        ],
-    )
+    with patch("opentop.vis.trajectory", return_value=_FakePlot()):
+        result = runner.invoke(
+            cli_main,
+            [
+                "replay",
+                "RYR880W",
+                "--from-file",
+                str(FLIGHT),
+                "-a",
+                "B738",
+                "--obj",
+                "fuel",
+                "--no-wind",
+                "--max-iter",
+                "300",
+                "-o",
+                str(out_dir),
+            ],
+        )
     if result.exit_code != 0:
         print(result.output)
         if result.exception:

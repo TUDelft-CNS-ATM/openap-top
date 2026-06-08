@@ -96,7 +96,7 @@ class PolyWind:
         self._poly = PolynomialFeatures(2)
         X_train = df[["x", "y", "h", "ts"]].values
         self._poly.fit(X_train)
-        ridge = Ridge()
+        ridge = Ridge(solver="svd")
         ridge.fit(self._poly.transform(X_train), df[["u", "v"]].values)
         self._coef: np.ndarray = np.asarray(ridge.coef_)  # shape (2, n_features)
         self._intercept: np.ndarray = np.asarray(ridge.intercept_)  # shape (2,)

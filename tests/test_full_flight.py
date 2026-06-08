@@ -89,11 +89,12 @@ def test_complete_flight_return_failed_returns_df_on_tight_fuel_budget():
     opt = top.CompleteFlight("A320", "EHAM", "EDDF", m0=0.85)
     opt.setup(max_iter=200)
 
-    df = opt.trajectory(
-        objective="fuel",
-        max_fuel=100.0,  # physically impossible for EHAM→EDDF
-        return_failed=True,
-    )
+    with pytest.warns(UserWarning):
+        df = opt.trajectory(
+            objective="fuel",
+            max_fuel=100.0,  # physically impossible for EHAM→EDDF
+            return_failed=True,
+        )
     # Regardless of whether the solver fails outright or returns a degenerate
     # trajectory that violates mass constraints, return_failed=True must hand
     # back a DataFrame (not None).

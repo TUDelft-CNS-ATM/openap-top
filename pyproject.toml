@@ -74,6 +74,11 @@ known-first-party = ["numpy", "pandas", "pyproj"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore:.*Wave drag is experimental\\.:UserWarning:openap\\.drag",
+    "ignore:ast\\.Num is deprecated.*:DeprecationWarning:astor\\.op_util",
+    "ignore:co_lnotab is deprecated.*:DeprecationWarning:impunity\\.wrapper",
+]
 
 [tool.pyright]
 include = ["opentop"]
