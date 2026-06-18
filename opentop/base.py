@@ -17,6 +17,7 @@ except ImportError:
     warnings.warn("cfgrib and sklearn are required for wind integration")
 
 from . import _dynamics, _objectives, _trajectory
+from ._performance import build_performance_models
 from ._types import LatLon
 
 if TYPE_CHECKING:
@@ -54,6 +55,8 @@ class Base:
         engine: str | None = None,
         use_synonym: bool = False,
         dT: float = 0.0,
+        performance_model: str = "openap",
+        bada_path: str | None = None,
     ) -> None:
         """OpenAP trajectory optimizer.
 
@@ -67,6 +70,8 @@ class Base:
                 engine.
             use_synonym (bool, optional): Use aircraft type synonym. Defaults to False.
             dT (float, optional): Temperature shift from standard ISA. Default = 0.
+            performance_model: Performance model name: "openap", "bada3", or "bada4".
+            bada_path: Path to BADA data when using BADA performance models.
         """
         if isinstance(origin, str):
             ap1 = openap.nav.airport(origin)
@@ -81,9 +86,20 @@ class Base:
             self.lat2, self.lon2 = destination
 
         self.actype = actype
-        self.aircraft = oc.prop.aircraft(self.actype, use_synonym=use_synonym)
-        self.engtype = engine or self.aircraft["engine"]["default"]
-        self.engine = oc.prop.engine(self.engtype)
+        self.performance_model = performance_model.lower()
+        self.bada_path = bada_path
+        self.use_synonym = use_synonym
+        models = build_performance_models(
+            self.actype,
+            engine=engine,
+            use_synonym=self.use_synonym,
+            performance_model=self.performance_model,
+            bada_path=self.bada_path,
+        )
+        self.performance_model = models.name
+        self.aircraft = models.aircraft
+        self.engtype = models.engtype
+        self.engine = models.engine
 
         self.mass_init = m0 * self.aircraft["mtow"]
         self.oew = self.aircraft["oew"]
@@ -92,29 +108,12 @@ class Base:
         self.mach_max = self.aircraft["mmo"]
         self.dT = dT
 
-        self.use_synonym = use_synonym
-        force_engine = engine is not None
-
-        self.thrust = oc.Thrust(
-            actype,
-            self.engtype,
-            use_synonym=self.use_synonym,
-            force_engine=force_engine,
-        )
-        self.wrap = openap.WRAP(actype, use_synonym=self.use_synonym)
-        self.drag = oc.Drag(actype, wave_drag=True, use_synonym=self.use_synonym)
-        self.fuelflow = oc.FuelFlow(
-            actype,
-            self.engtype,
-            wave_drag=True,
-            use_synonym=self.use_synonym,
-            force_engine=force_engine,
-        )
-        self.emission = oc.Emission(
-            actype,
-            self.engtype,
-            use_synonym=self.use_synonym,
-        )
+        native_actype = actype.split("-", 1)[0]
+        self.thrust = models.thrust
+        self.wrap = openap.WRAP(native_actype, use_synonym=self.use_synonym)
+        self.drag = models.drag
+        self.fuelflow = models.fuelflow
+        self.emission = models.emission
 
         self.wind = None
 
@@ -557,6 +556,52 @@ class Base:
 
         return self.to_trajectory(ts_final_val, x_opt, u_opt, **kwargs)
 
+    def _thrust_climb(self, tas: Any, alt: Any) -> Any:
+        if self.performance_model == "openap":
+            return self.thrust.climb(tas, alt, 0, dT=self.dT)
+        return self.thrust.climb(tas, alt, dT=self.dT)
+
+    def _clean_drag_polar_params(self, tas: Any, alt: Any) -> dict[str, Any]:
+        if hasattr(self.drag, "clean_drag_polar_params"):
+            return self.drag.clean_drag_polar_params(tas=tas, alt=alt, dT=self.dT)
+        polar = self.drag.polar["clean"]
+        return {"cd0": polar["cd0"], "cd2": polar["k"], "cd6": 0.0}
+
+    def _lift_margin_drag(
+        self, mass: Any, tas: Any, alt: Any, margin: float = 0.8
+    ) -> Any:
+        h = alt * ft
+        v = tas * kts
+        area = self.drag.S if hasattr(self.drag, "S") else self.aircraft["wing"]["area"]
+        rho = oc.aero.density(h, dT=self.dT)
+        qS = 0.5 * rho * v**2 * area
+        cl_margin = mass * oc.aero.g0 / (qS * margin + 1e-10)
+        params = self._clean_drag_polar_params(tas, alt)
+        cd = (
+            params["cd0"]
+            + params["cd2"] * cl_margin**2
+            + params.get("cd6", 0.0) * cl_margin**6
+        )
+        return cd * qS
+
+    def _constrain_clean_performance(
+        self,
+        opti: ca.Opti,
+        mass: Any,
+        tas: Any,
+        alt: Any,
+        thrust_max: Any,
+        *,
+        drag_margin: float = 0.95,
+        lift_drag_margin: float = 0.9,
+    ) -> Any:
+        drag = self.drag.clean(mass, tas, alt, dT=self.dT)
+        opti.subject_to(thrust_max * drag_margin >= drag)
+        opti.subject_to(
+            thrust_max * lift_drag_margin >= self._lift_margin_drag(mass, tas, alt)
+        )
+        return drag
+
     def _calc_emission(self, x, u, symbolic=True):
         """Compute emission species from state and control vectors.
 
@@ -600,6 +645,8 @@ class Base:
             "actype": self.actype,
             "engtype": self.engtype,
             "use_synonym": self.use_synonym,
+            "performance_model": self.performance_model,
+            "bada_path": self.bada_path,
             "proj": self.proj,
             "calc_emission": self._calc_emission,
         }
@@ -698,6 +745,8 @@ class Base:
             actype=self.actype,
             engtype=self.engtype,
             use_synonym=self.use_synonym,
+            performance_model=self.performance_model,
+            bada_path=self.bada_path,
             interpolant=kwargs.get("interpolant", None),
             time_dependent=kwargs.get("time_dependent", True),
             n_dim=kwargs.get("n_dim"),

@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 
 from . import _objectives
+from ._performance import build_numeric_fuelflow
 
 if TYPE_CHECKING:
     from .tools import PolyWind  # forward-ref; avoids circular import
@@ -33,6 +34,8 @@ def to_dataframe(
     actype: str,
     engtype: str,
     use_synonym: bool = False,
+    performance_model: str = "openap",
+    bada_path: str | None = None,
     interpolant: Any = None,
     time_dependent: bool = True,
     n_dim: Optional[int] = None,
@@ -129,11 +132,12 @@ def to_dataframe(
         )
     )
 
-    fuelflow = openap.FuelFlow(
+    fuelflow = build_numeric_fuelflow(
         actype,
-        engtype,
+        engtype=engtype,
         use_synonym=use_synonym,
-        force_engine=True,
+        performance_model=performance_model,
+        bada_path=bada_path,
     )
 
     df = df.assign(
